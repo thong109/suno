@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0e12">
+  <title>auriovideo · Playlist Video Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="auriovideo trang chủ">
+      <span class="brand-mark">A</span>
+      <span class="brand-copy"><strong>auriovideo</strong><small>PLAYLIST VIDEO WORKSPACE</small></span>
+    </a>
+    <div class="top-actions">
+      <a class="admin-link" href="#workspace">Quản trị</a>
+      <span class="free-note">Dựng thử miễn phí <i></i> lưu video cần mã</span>
+      <a class="button button-quiet" href="./karaoke.html">Karaoke Studio</a>
+      <button class="button button-quiet" id="backgroundShortcut">▧ <span>Edit ảnh / video nền</span></button>
+      <button class="button button-quiet" id="openProject">Mở dự án</button>
+      <button class="button button-quiet" id="saveProject">Lưu dự án</button>
+      <button class="button button-primary" id="exportVideo">Xuất video <span>↗</span></button>
+    </div>
+    <button class="mobile-menu" id="mobileMenu" aria-label="Mở menu">☰</button>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <section class="studio">
+      <div class="studio-heading">
+        <div>
+          <span class="eyebrow">MÀN HÌNH DỰNG</span>
+          <h1>Dựng một playlist. <span>Giữ trọn cảm xúc.</span></h1>
+        </div>
+        <span class="quality-pill"><span class="live-dot"></span> 16:9 · 1080p</span>
+      </div>
+
+      <div class="preview-frame" id="previewFrame" aria-label="Xem trước video âm nhạc">
+        <div class="preview-backdrop" id="previewBackdrop"></div>
+        <div class="preview-grain"></div>
+        <div class="channel-watermark" id="channelWatermark">AurioMusic</div>
+        <div class="music-scene" id="musicScene">
+          <div class="record" id="record">
+            <div class="record-grooves"></div>
+            <div class="record-label"><span id="recordLabel">AurioMusic</span><small>RECORD LABEL</small></div>
+            <div class="record-hole"></div>
+          </div>
+          <div class="cover-card" id="coverCard">
+            <div class="cover-top"><span>NOW PLAYING</span><span>EST. 21</span></div>
+            <div class="cover-photo" id="coverPhoto"></div>
+            <div class="cover-shade"></div>
+            <div class="cover-copy">
+              <span class="cover-kicker">AURIO MUSIC PRESENTS</span>
+              <strong id="previewTitle">Tên bài hát</strong>
+              <span id="previewArtist">Ca sĩ giấu mặt</span>
+              <small id="previewAlbum">COVER ROCK BALLAD</small>
+            </div>
+            <div class="cover-bottom"><span>♫</span><span>VOL. 01</span></div>
+          </div>
+        </div>
+        <div class="floating-title" id="floatingTitle" hidden></div>
+        <div class="floating-note" id="previewNote" hidden></div>
+        <div class="subtitle-preview" id="subtitlePreview" hidden></div>
+        <canvas class="sound-wave" id="soundWave" aria-hidden="true"></canvas>
+        <div class="preview-caption">
+          <span class="caption-line"></span>
+          <span id="previewTrackCaption">A U R I O&nbsp; · &nbsp;M U S I C</span>
+          <span class="caption-line"></span>
+        </div>
+        <div class="preview-vignette"></div>
+      </div>
+
+      <div class="player-controls">
+        <button class="control-button play-button" id="playPause" aria-label="Phát hoặc tạm dừng"><span id="playIcon">▶</span></button>
+        <span class="timecode"><b id="currentTime">00:00</b><span> / </span><b id="totalTime">00:00</b></span>
+        <input type="range" id="seekBar" min="0" max="100" value="0" aria-label="Vị trí phát">
+        <button class="control-button" id="previousTrack" aria-label="Bài trước">|◀</button>
+        <button class="control-button" id="nextTrack" aria-label="Bài tiếp theo">▶|</button>
+        <button class="control-button reset-button" id="restartTrack" aria-label="Về đầu bài">↺</button>
+      </div>
+
+      <div class="timeline-track">
+        <div class="timeline-label"><span id="timelineTrackName">Chưa chọn nhạc</span><span id="timelineHint">SPACE: PHÁT / DỪNG&nbsp; · &nbsp;ENTER: ĐÁNH DẤU CÂU</span></div>
+        <div class="timeline-ruler"><span>00:00</span><div class="timeline-line"><i></i></div><span id="timelineEnd">00:00</span></div>
+      </div>
+
+      <div class="steps-row">
+        <div class="step-card"><span>01</span><div><strong>Thêm & sắp xếp bài</strong><small>Âm nhạc của bạn, câu chuyện của bạn.</small></div></div>
+        <div class="step-card"><span>02</span><div><strong>Căn lời khi nghe</strong><small>Đánh dấu từng câu thật tự nhiên.</small></div></div>
+        <div class="step-card"><span>03</span><div><strong>Xuất cả playlist</strong><small>Một video dài, liền mạch cảm xúc.</small></div></div>
+      </div>
+      <p class="privacy-note"><span>⌑</span> Ảnh và nhạc được xử lý trên máy của bạn. Dự án đã lưu giữ ảnh, lời và thiết lập; khi mở lại, thêm lại file nhạc để nối đúng từng bài.</p>
+    </section>
+
+    <aside class="editor-panel">
+      <nav class="tab-bar" role="tablist" aria-label="Công cụ chỉnh sửa">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="playlist"><span>♫</span> Playlist</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="background"><span>▧</span> Edit nền ảnh / video</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="lyrics"><span>≋</span> Lời & sub</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="text"><span>T</span> Chữ & tiêu đề</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="visuals"><span>◉</span> Ảnh & sóng</button>
+      </nav>
+      <div class="panel-content" id="panelContent"></div>
+    </aside>
+  </main>
+
+  <audio id="audioPlayer" preload="metadata"></audio>
+  <input type="file" id="audioFiles" accept="audio/*,.mp3,.wav,.m4a" multiple hidden>
+  <input type="file" id="replaceAudio" accept="audio/*,.mp3,.wav,.m4a" hidden>
+  <input type="file" id="projectFile" accept=".json,application/json" hidden>
+  <input type="file" id="discImageInput" accept="image/*" hidden>
+  <input type="file" id="squareImageInput" accept="image/*" hidden>
+  <input type="file" id="backgroundImageInput" accept="image/*" hidden>
+  <input type="file" id="logoInput" accept="image/*" hidden>
+  <input type="file" id="backgroundVideoInput" accept="video/mp4,video/webm" multiple hidden>
+  <input type="file" id="backgroundSceneImagesInput" accept="image/*" multiple hidden>
+  <input type="file" id="sceneFilesInput" accept="image/*,video/mp4,video/webm" multiple hidden>
+  <input type="file" id="overlayInput" accept="image/*,video/mp4,video/webm" hidden>
+  <input type="file" id="lyricFileInput" accept=".txt,.srt,text/plain" hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0e12">
+  <title>Karaoke Studio · auriovideo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./karaoke.css">
+</head>
+<body>
+  <header class="karaoke-topbar">
+    <a class="brand" href="./index.html" aria-label="Quay lại auriovideo">
+      <span class="brand-mark">A</span>
+      <span class="brand-copy"><strong>auriovideo</strong><small>KARAOKE VIDEO STUDIO</small></span>
+    </a>
+    <div class="topbar-actions">
+      <a class="top-link" href="./index.html">← Playlist Studio</a>
+      <button class="top-button" id="openProject">Mở dự án</button>
+      <button class="top-button" id="saveProject">Lưu dự án</button>
+      <button class="top-button top-primary" id="exportVideo">Xuất video <span>↗</span></button>
+    </div>
+    <button class="mobile-menu" id="mobileMenu" aria-label="Mở menu">☰</button>
+  </header>
+
+  <main class="karaoke-workspace">
+    <section class="studio-column">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">KARAOKE VIDEO STUDIO</span>
+          <h1>Mỗi câu hát, <em>sáng lên đúng lúc.</em></h1>
+          <p>Đặt video một bên, lời bài hát một bên — căn thời gian, xem thử rồi xuất video.</p>
+        </div>
+        <span class="quality-badge"><i></i> 16:9 · 1080p</span>
+      </div>
+
+      <div class="stage-wrap">
+        <div class="stage" id="stage">
+          <div class="stage-background" id="stageBackground"></div>
+          <div class="stage-shade"></div>
+          <header class="stage-heading">
+            <div class="song-title" id="songTitlePreview">Tên bài hát</div>
+            <div class="song-artist" id="stageArtist"></div>
+          </header>
+          <div class="stage-content video-left" id="stageContent">
+            <div class="video-shell" id="videoShell">
+              <video id="sourceVideo" playsinline preload="metadata"></video>
+              <div class="video-empty" id="videoEmpty">
+                <span>▶</span>
+                <strong>Video của bạn sẽ ở đây</strong>
+                <small>Tải MP4 hoặc WebM để bắt đầu</small>
+              </div>
+            </div>
+            <section class="lyric-panel" id="lyricPanel">
+              <div class="lyric-progress"><i id="lyricProgress"></i></div>
+              <div class="stage-lyrics" id="stageLyrics" aria-live="off">
+                <p class="stage-placeholder">Lời bài hát sẽ hiện ở đây</p>
+              </div>
+            </section>
+          </div>
+          <div class="stage-loader" id="stageLoader" hidden><i></i> Đang chuẩn bị video…</div>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button class="transport-button transport-play" id="playPause" aria-label="Phát hoặc tạm dừng">▶</button>
+        <span class="transport-time"><b id="currentTime">00:00</b><span>/</span><b id="totalTime">00:00</b></span>
+        <input id="seekBar" type="range" min="0" max="1000" value="0" aria-label="Tua video">
+        <button class="transport-button" id="restartVideo" aria-label="Về đầu video">↺</button>
+        <span class="key-hint">SPACE phát / dừng <i>·</i> ENTER đánh dấu câu</span>
+      </div>
+
+      <section class="lyrics-editor">
+        <div class="lyrics-editor-head">
+          <div><span class="eyebrow">LỜI & MỐC THỜI GIAN</span><h2>Căn lyric theo nhạc</h2></div>
+          <span class="cue-count" id="cueCount">0 câu</span>
+        </div>
+        <div class="lyrics-actions">
+          <button class="secondary-button" id="importLyrics">Nhập TXT / SRT / LRC</button>
+          <button class="secondary-button" id="addCue">＋ Thêm câu</button>
+          <button class="secondary-button" id="markCue">● Căn câu đang chọn <kbd>Enter</kbd></button>
+          <button class="secondary-button secondary-danger" id="clearLyrics">Xóa lời</button>
+        </div>
+        <textarea id="lyricsInput" class="lyrics-input" placeholder="Dán lời bài hát tại đây, mỗi câu một dòng.&#10;&#10;Bạn có thể căn từng câu khi nghe hoặc nhập file SRT/LRC đã có mốc thời gian."></textarea>
+        <div class="cue-list" id="cueList"></div>
+        <p class="footnote">Mốc bắt đầu và kết thúc có thể chỉnh trực tiếp. Tô sáng karaoke chạy lần lượt qua từng từ trong khoảng thời gian của câu.</p>
+      </section>
+    </section>
+
+    <aside class="settings-column">
+      <section class="settings-card">
+        <div class="card-title"><span class="card-icon">▣</span><div><h2>Nội dung video</h2><p>Video có sẵn nhạc hoặc tiếng nền</p></div></div>
+        <button class="upload-box" id="chooseVideo">
+          <span class="upload-icon">↥</span><strong id="videoFileName">Chọn video của bạn</strong>
+          <small>MP4, WebM · âm thanh trong video được giữ khi xuất</small>
+        </button>
+        <div class="mini-controls">
+          <label class="input-label" for="songTitle">Tên bài hát</label>
+          <input class="text-input" id="songTitle" value="Tên bài hát" placeholder="Tên bài hát">
+          <label class="input-label" for="artistName">Ca sĩ / ghi chú</label>
+          <input class="text-input" id="artistName" value="" placeholder="Tên ca sĩ">
+        </div>
+        <input type="file" id="videoFile" accept="video/mp4,video/webm,video/quicktime" hidden>
+        <input type="file" id="lyricsFile" accept=".txt,.srt,.lrc,text/plain" hidden>
+        <input type="file" id="backgroundFile" accept="image/*" hidden>
+        <input type="file" id="projectFile" accept=".json,application/json" hidden>
+      </section>
+
+      <section class="settings-card">
+        <div class="card-title"><span class="card-icon">◫</span><div><h2>Bố cục & khung hình</h2><p>Tạo khung riêng cho video</p></div></div>
+        <label class="control-label" for="videoSide">Vị trí video</label>
+        <select class="select-input" id="videoSide"><option value="left">Video bên trái</option><option value="right">Video bên phải</option></select>
+        <label class="control-label" for="videoFit">Cách hiển thị video</label>
+        <select class="select-input" id="videoFit"><option value="cover">Lấp đầy khung</option><option value="contain">Hiện trọn video</option></select>
+        <label class="range-label" for="videoSize"><span>Độ rộng khung video</span><output id="videoSizeValue">48%</output></label>
+        <input class="range-input" id="videoSize" type="range" min="35" max="62" value="48">
+        <label class="range-label" for="videoHeight"><span>Độ cao khung video</span><output id="videoHeightValue">68%</output></label>
+        <input class="range-input" id="videoHeight" type="range" min="38" max="78" value="68">
+        <label class="range-label" for="borderWidth"><span>Độ dày viền video</span><output id="borderWidthValue">3 px</output></label>
+        <input class="range-input" id="borderWidth" type="range" min="0" max="16" value="3">
+        <label class="control-label" for="borderColor">Màu viền</label>
+        <div class="color-row"><input id="borderColor" type="color" value="#e8b65f"><span>Viền nổi bật quanh video</span></div>
+        <label class="range-label" for="borderRadius"><span>Bo góc video</span><output id="borderRadiusValue">18 px</output></label>
+        <input class="range-input" id="borderRadius" type="range" min="0" max="48" value="18">
+      </section>
+
+      <section class="settings-card">
+        <div class="card-title"><span class="card-icon">✦</span><div><h2>Nền toàn video</h2><p>Ảnh nền phủ toàn khung hình</p></div></div>
+        <button class="secondary-button full-button" id="chooseBackground">▧ Chọn ảnh nền</button>
+        <div class="control-label background-label">Màu nền dự phòng</div>
+        <div class="color-row"><input id="backgroundColor" type="color" value="#101116"><span>Dùng khi chưa tải ảnh nền</span></div>
+        <label class="range-label" for="backgroundDim"><span>Làm tối nền</span><output id="backgroundDimValue">34%</output></label>
+        <input class="range-input" id="backgroundDim" type="range" min="0" max="85" value="34">
+        <button class="text-button" id="removeBackground" hidden>Bỏ ảnh nền</button>
+        <div class="asset-name" id="backgroundName">Chưa chọn ảnh nền</div>
+      </section>
+
+      <section class="settings-card">
+        <div class="card-title"><span class="card-icon">Aa</span><div><h2>Chữ karaoke</h2><p>Chỉnh màu và độ lớn lyric</p></div></div>
+        <label class="control-label" for="fontFamily">Kiểu chữ</label>
+        <select class="select-input" id="fontFamily"><option value="sans">Sans · hiện đại</option><option value="serif">Serif · điện ảnh</option></select>
+        <label class="range-label" for="fontSize"><span>Cỡ chữ</span><output id="fontSizeValue">35 px</output></label>
+        <input class="range-input" id="fontSize" type="range" min="20" max="58" value="35">
+        <div class="text-style-divider">TÊN BÀI HÁT</div>
+        <label class="control-label" for="titleFontFamily">Font tên bài hát</label>
+        <select class="select-input" id="titleFontFamily"><option value="serif">Serif · điện ảnh</option><option value="sans">Sans · hiện đại</option></select>
+        <label class="range-label" for="titleFontSize"><span>Cỡ tên bài hát</span><output id="titleFontSizeValue">28 px</output></label>
+        <input class="range-input" id="titleFontSize" type="range" min="16" max="54" value="28">
+        <div class="text-style-divider">TÊN NGƯỜI HÁT</div>
+        <label class="control-label" for="artistFontFamily">Font tên người hát</label>
+        <select class="select-input" id="artistFontFamily"><option value="sans">Sans · hiện đại</option><option value="serif">Serif · điện ảnh</option></select>
+        <label class="range-label" for="artistFontSize"><span>Cỡ tên người hát</span><output id="artistFontSizeValue">15 px</output></label>
+        <input class="range-input" id="artistFontSize" type="range" min="10" max="32" value="15">
+        <label class="control-label" for="lyricColor">Màu chữ chưa hát</label>
+        <div class="color-row"><input id="lyricColor" type="color" value="#d8d9de"><span>Chữ phía trước</span></div>
+        <label class="control-label" for="highlightColor">Màu chữ đang hát</label>
+        <div class="color-row"><input id="highlightColor" type="color" value="#ffd477"><span>Tô sáng lần lượt từng từ</span></div>
+        <label class="range-label" for="lineSpacing"><span>Khoảng cách các câu</span><output id="lineSpacingValue">1.7</output></label>
+        <input class="range-input" id="lineSpacing" type="range" min="12" max="26" value="17">
+        <label class="check-control"><input id="wordHighlight" type="checkbox" checked><span>Tô sáng karaoke từng từ</span></label>
+      </section>
+
+      <div class="privacy-callout"><span>⌑</span><p>Video và dự án được xử lý ngay trên máy của bạn. Khi xuất, hãy giữ trang mở cho đến khi tệp tải xuống hoàn tất.</p></div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./karaoke.js"></script>
+</body>
+</html>
