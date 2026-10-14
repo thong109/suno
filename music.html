@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0e12">
+  <title>Music Studio · auriovideo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./music.css">
+</head>
+<body>
+  <header class="music-topbar">
+    <a class="brand" href="./index.html" aria-label="Quay lại auriovideo">
+      <span class="brand-mark">A</span>
+      <span class="brand-copy"><strong>auriovideo</strong><small>MUSIC PRODUCTION STUDIO</small></span>
+    </a>
+    <div class="top-actions">
+      <a class="top-link" href="./index.html">Playlist Studio</a>
+      <a class="top-link" href="./karaoke.html">Karaoke Studio</a>
+      <a class="top-link" href="./video-mix.html">Gộp voice + video</a>
+      <button class="top-button" id="openProject">Mở dự án</button>
+      <button class="top-button" id="saveProject">Lưu dự án</button>
+      <button class="top-button top-primary" id="exportMix">Xuất WAV ↗</button>
+    </div>
+    <button class="mobile-menu" id="mobileMenu" aria-label="Mở menu">☰</button>
+  </header>
+
+  <main class="music-layout">
+    <section class="arrangement">
+      <div class="page-heading">
+        <div><span class="eyebrow">MUSIC PRODUCTION</span><h1>Thu giọng. Tạo beat. <em>Hoàn thiện bản phối.</em></h1><p>Studio chạy ngay trên trình duyệt — âm thanh được xử lý trên máy của bạn.</p></div>
+        <label class="project-name-label">TÊN DỰ ÁN<input id="projectName" value="Bản nhạc bolero mới"></label>
+      </div>
+
+      <div class="transport-panel">
+        <div class="transport-main">
+          <button class="transport-button" id="stopPlayback" aria-label="Dừng">■</button>
+          <button class="transport-button play" id="togglePlayback" aria-label="Phát">▶</button>
+          <button class="transport-button" id="rewind" aria-label="Về đầu">↶</button>
+          <span class="transport-clock" id="playheadLabel">00:00.0</span>
+          <span class="transport-divider">/</span>
+          <span class="transport-duration" id="durationLabel">00:00.0</span>
+          <input id="masterVolume" type="range" min="0" max="100" value="85" aria-label="Âm lượng tổng">
+          <span class="master-label">MASTER <b id="masterVolumeLabel">85%</b></span>
+        </div>
+        <div class="tempo-controls">
+          <label for="tempo">BPM</label><input id="tempo" type="number" min="50" max="200" value="72">
+          <label for="meter">NHỊP</label><select id="meter"><option value="4">4/4</option><option value="3">3/4</option></select>
+          <label for="bars">ĐỘ DÀI</label><select id="bars"><option value="4">4 bars</option><option value="8" selected>8 bars</option><option value="16">16 bars</option></select>
+          <span class="play-status" id="playStatus">SẴN SÀNG</span>
+        </div>
+      </div>
+
+      <section class="timeline-card">
+        <div class="timeline-head"><div><span class="eyebrow">ARRANGEMENT</span><h2>Timeline đa track</h2></div><div class="timeline-actions"><button class="small-button" id="importAudio">＋ Thêm audio</button><button class="small-button record-button" id="recordVoice">● Thu giọng</button></div></div>
+        <div class="timeline-scroll">
+          <div class="ruler-row"><div class="track-label-spacer">TRACK</div><div class="ruler" id="timelineRuler"></div></div>
+          <div id="trackList" class="track-list"></div>
+          <div class="timeline-playhead" id="playhead"><i></i></div>
+        </div>
+        <div class="timeline-footer"><span>Kéo playhead hoặc bấm vào timeline để tua</span><span id="trackSummary">0 track</span></div>
+      </section>
+
+      <section class="mixer-card">
+        <div class="section-heading"><div><span class="eyebrow">MIXER</span><h2>Các track trong bản phối</h2></div><span class="local-badge">● LOCAL AUDIO</span></div>
+        <div class="mixer-list" id="mixerList"></div>
+        <div class="empty-mixer" id="emptyMixer">Chưa có track. Tạo beat/đệm hoặc thu âm để bắt đầu.</div>
+      </section>
+    </section>
+
+    <aside class="tool-column">
+      <section class="tool-card">
+        <div class="tool-heading"><span class="tool-icon red">●</span><div><h2>Thu âm voice</h2><p>Thu giọng trực tiếp từ micro</p></div></div>
+        <p class="helper">Cho phép trình duyệt dùng micro. File thu sẽ được thêm vào timeline để cắt, căn vị trí và mix.</p>
+        <button class="wide-button record-button" id="recordVoiceSide">● &nbsp; Bắt đầu thu</button>
+        <div class="recording-status" id="recordingStatus">Micro chưa bật</div>
+      </section>
+
+      <section class="tool-card">
+        <div class="tool-heading"><span class="tool-icon gold">♫</span><div><h2>Beat bolero</h2><p>Nhịp chậm 4/4, điểm trống nhẹ</p></div></div>
+        <label class="control-label" for="beatStyle">Phong cách beat</label>
+        <select class="tool-select" id="beatStyle"><option value="bolero" selected>Bolero · chậm, trữ tình</option><option value="pop">Pop · sáng, đều</option><option value="hiphop">Hip-hop · boom bap</option><option value="rock">Rock · trống mạnh</option><option value="lofi">Lo-fi · mềm, bụi</option><option value="dance">Dance · bốn sàn</option></select>
+        <label class="control-label" for="beatEnergy">Năng lượng</label>
+        <div class="range-value"><input type="range" min="1" max="5" value="2" id="beatEnergy"><output id="beatEnergyValue">2 / 5</output></div>
+        <button class="wide-button" id="generateBeat">✦ &nbsp; Tạo beat</button>
+      </section>
+
+      <section class="tool-card">
+        <div class="tool-heading"><span class="tool-icon blue">▤</span><div><h2>Đệm bolero</h2><p>Hợp âm I–vi–ii–V, bass và móc dây giả lập</p></div></div>
+        <label class="control-label" for="musicKey">Tông nhạc</label>
+        <select class="tool-select" id="musicKey"><option value="C">C major</option><option value="D">D major</option><option value="E">E major</option><option value="F">F major</option><option value="G">G major</option><option value="A">A major</option><option value="Bb">Bb major</option></select>
+        <label class="control-label" for="chordPattern">Vòng hợp âm</label>
+        <select class="tool-select" id="chordPattern"><option value="bolero" selected>I – vi – ii – V · Bolero</option><option value="pop">I – V – vi – IV · Pop</option><option value="classic">I – vi – IV – V · Classic</option><option value="minor">vi – IV – I – V · Ballad</option><option value="jazz">ii – V – I – vi · Jazz</option></select>
+        <button class="wide-button" id="generateBacking">✦ &nbsp; Tạo đệm bolero</button>
+      </section>
+
+      <section class="tool-card ai-card">
+        <div class="tool-heading"><span class="tool-icon violet">✧</span><div><h2>Tạo track vocal bolero</h2><p>AI hát lời, rồi tách giọng thành track riêng</p></div></div>
+        <label class="control-label" for="aiLyrics">Lời bài hát</label>
+        <textarea id="aiLyrics" class="tool-textarea" placeholder="Dán lời của bạn, mỗi câu một dòng (tối đa 30 dòng)..."></textarea>
+        <label class="control-label" for="aiStyle">Mô tả giọng / phong cách</label>
+        <input id="aiStyle" class="tool-input" value="Warm expressive male singing voice, Vietnamese bolero, nostalgic romantic mood">
+        <label class="control-label" for="aiDuration">Thời lượng dự kiến</label>
+        <select class="tool-select" id="aiDuration"><option value="30">30 giây</option><option value="60" selected>60 giây</option><option value="90">90 giây</option></select>
+        <label class="control-label" for="aiAccessCode">Mã truy cập AI của trang</label>
+        <input id="aiAccessCode" class="tool-input" type="password" autocomplete="off" placeholder="Chưa cần nhập nếu chưa cấu hình AI">
+        <p class="ai-workflow-note">Quy trình: ElevenLabs tạo bài hát có cả nhạc → AudioShake tách vocal lead WAV. Beat tạo trong studio không được dùng làm nhạc nền cho phần hát này; cần tự căn chỉnh, và tách vocal có thể còn lẫn nhạc.</p>
+        <label class="ai-consent"><input id="aiConsent" type="checkbox"><span>Tôi đồng ý gửi lời/phong cách tới ElevenLabs để tạo bài hát, rồi gửi audio tạo ra tới AudioShake để tách vocal. Giọng AI có thể không khớp hoàn toàn mô tả; cần kiểm tra điều khoản hai dịch vụ trước khi phát hành cho người dùng.</span></label>
+        <div class="provider-status" id="providerStatus"><span>○</span><p>Đang kiểm tra kết nối AI…</p></div>
+        <button class="wide-button disabled-button" id="generateAIVocal" disabled>Tạo track vocal riêng</button>
+      </section>
+
+      <section class="tool-card">
+        <div class="tool-heading"><span class="tool-icon">↥</span><div><h2>File âm thanh</h2><p>Thêm vocal, sample hoặc nhạc cụ</p></div></div>
+        <button class="wide-button secondary" id="importAudioSide">Chọn audio từ máy</button>
+        <input type="file" id="audioFiles" accept="audio/*,.wav,.mp3,.m4a,.ogg" multiple hidden>
+        <input type="file" id="projectFile" accept=".json,application/json" hidden>
+      </section>
+      <div class="privacy-note">Audio bạn nhập/thu được xử lý trên máy. Khi xác nhận tạo vocal, lời và mô tả được gửi tới ElevenLabs; bài hát do AI tạo được gửi tới AudioShake để tách giọng.</div>
+    </aside>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./music.js"></script>
+</body>
+</html>

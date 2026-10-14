@@ -41,24 +41,26 @@ h1 span { color: #e1e0df; }
 .preview-backdrop { position: absolute; z-index: -3; inset: 0; background-image: radial-gradient(ellipse at 50% 56%,#1d1b19 0%,#11141a 59%,#08090c 100%); transition: background-image .2s; }
 .preview-grain { position: absolute; z-index: -2; inset: 0; opacity: .25; background-image: radial-gradient(#d8bd8c88 .5px,transparent .8px); background-size: 44px 44px; mask-image: linear-gradient(90deg,transparent,black 24%,black 78%,transparent); }
 .channel-watermark { position: absolute; top: 5.7%; left: 5.5%; color: #e5c37c; font: 10px "Playfair Display",serif; letter-spacing: .6px; text-shadow: 0 1px 8px #000; }
-.music-scene { position: absolute; width: min(49%,590px); height: 60%; left: 50%; top: 49%; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; }
-.record { position: absolute; left: 3%; width: 51%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: repeating-radial-gradient(circle at center,#090a0c 0 2px,#191b1e 2.8px 3.7px,#08090b 4px 5px); box-shadow: 0 16px 45px #000a, 0 0 0 1px #8b806a44; animation: spin 11s linear infinite; animation-play-state: paused; }
+.music-scene { position: absolute; width: min(58%,650px); height: 66%; left: 50%; top: 49%; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; }
+.record { position: absolute; left: 3%; width: 51%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: repeating-radial-gradient(circle at center,#090a0c 0 2px,#191b1e 2.8px 3.7px,#08090b 4px 5px); box-shadow: 0 16px 45px #000a, 0 0 0 1px #8b806a44; animation: spin var(--record-spin-duration,10s) linear infinite; animation-play-state: paused; }
+.record::before { content: ""; position: absolute; inset: 4%; border-radius: 50%; background: conic-gradient(from 0deg,transparent 0deg,#ffffff20 34deg,transparent 72deg,#d5b77d12 286deg,transparent 330deg); opacity: .72; }
 body.is-playing .record { animation-play-state: running; }
 .record-grooves { position: absolute; inset: 4%; border-radius: 50%; border: 1px solid #ffffff08; box-shadow: inset 0 0 0 12px #ffffff03, inset 0 0 0 23px #ffffff04, inset 0 0 0 36px #ffffff03; }
 .record-label { width: 39%; aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; color: #1a1712; background: radial-gradient(circle at 38% 30%,#f8d28b,#e8b65f 70%); box-shadow: 0 0 0 1px #fff4, 0 0 28px #e9b45a20; font: 600 clamp(8px,1vw,13px) "Playfair Display",serif; }
 .record-label small { margin-top: 4px; font: 700 4px "DM Sans",sans-serif; letter-spacing: 1px; }
 .record-hole { position: absolute; z-index: 2; width: 5px; height: 5px; border-radius: 50%; background: #111; }
-.cover-card { position: absolute; z-index: 2; right: 2%; width: 51%; aspect-ratio: 1.07; border: 1px solid #353840; border-radius: 6px; overflow: hidden; background: linear-gradient(140deg,#10151b,#070a0f); box-shadow: 0 18px 35px #0009,0 1px 1px #ffffff0d inset; }
-.cover-top, .cover-bottom { position: absolute; left: 8%; right: 8%; display: flex; justify-content: space-between; z-index: 2; color: #d8b96f; font-size: clamp(4px,.45vw,7px); letter-spacing: .7px; }
-.cover-top { top: 7%; }
-.cover-bottom { bottom: 7%; }
-.cover-photo { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: .3; }
-.cover-shade { position: absolute; inset: 0; background: linear-gradient(90deg,#080b10d9,#0b0e14a8 55%,#06070adb); }
-.cover-copy { position: absolute; inset: 10% 7%; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; text-shadow: 0 2px 8px #000; }
-.cover-kicker { margin-bottom: 9%; color: #c9a860; font-size: clamp(4px,.43vw,7px); letter-spacing: 1px; }
-.cover-copy strong { max-width: 96%; font: 600 clamp(15px,2vw,29px) "Playfair Display",serif; }
-.cover-copy > span:not(.cover-kicker) { margin-top: 7%; font-size: clamp(7px,.68vw,10px); }
-.cover-copy small { margin-top: 4%; color: #c5a866; font-size: clamp(5px,.48vw,7px); letter-spacing: .7px; }
+.cover-card { position: absolute; z-index: 2; right: 2%; width: 51%; aspect-ratio: 1.07; border: 1px solid #ffffff26; border-radius: 10px; overflow: hidden; background: linear-gradient(140deg,#10151b,#070a0f); box-shadow: 0 22px 44px #0009,0 1px 1px #ffffff12 inset; }
+.cover-top, .cover-bottom { position: absolute; left: 9%; right: 9%; display: flex; justify-content: space-between; z-index: 2; color: #e1c58c; font-size: clamp(4px,.43vw,7px); font-weight: 600; letter-spacing: 1.15px; }
+.cover-top { top: 8%; }
+.cover-bottom { bottom: 7%; color: #ffffffa8; }
+.cover-photo { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: .48; }
+.cover-shade { position: absolute; inset: 0; background: linear-gradient(180deg,#080b1066 0%,#080b1030 38%,#080b1060 72%,#080b10d9 100%),linear-gradient(90deg,#080b1040,#080b1010 50%,#06070d40); }
+.cover-copy { position: absolute; inset: 15% 10%; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; text-shadow: 0 2px 12px #000b; }
+.cover-kicker { margin-bottom: 8%; color: #e3c98f; font-size: clamp(4px,.4vw,6px); font-weight: 600; letter-spacing: 1.6px; }
+.cover-copy strong { max-width: 96%; font: 600 clamp(15px,2vw,29px) "Playfair Display",serif; line-height: 1.14; text-wrap: balance; }
+.cover-copy strong::after { content: ""; display: block; width: 24px; height: 1px; margin: 7% auto 0; background: linear-gradient(90deg,transparent,#e7c887,transparent); }
+.cover-copy > span:not(.cover-kicker) { margin-top: 6%; color: #fff5e8; font-size: clamp(7px,.72vw,11px); letter-spacing: .15px; }
+.cover-copy small { margin-top: 12%; color: #e1c58c; font-size: clamp(5px,.45vw,7px); font-weight: 600; letter-spacing: 1.4px; }
 .subtitle-preview { z-index: 3; position: absolute; bottom: 16%; left: 50%; transform: translateX(-50%); max-width: 75%; padding: 8px 14px; text-align: center; color: white; font-size: clamp(11px,1.3vw,18px); text-shadow: 0 2px 5px black; background: #0009; border-radius: 5px; }
 .floating-title, .floating-note { position: absolute; z-index: 3; left: 50%; transform: translate(-50%,-50%); max-width: 82%; text-align: center; text-shadow: 0 2px 10px #000; }
 .floating-title { top: 42%; font: 600 clamp(24px,4vw,56px) "Playfair Display",serif; }

@@ -533,7 +533,16 @@ function renderPanel(tab = state.activeTab) {
   renderSceneList();
   bindPanelEvents();
   syncPreviewLayout();
+  syncRecordRotation();
   applyWaveSettings();
+}
+
+function syncRecordRotation() {
+  const record = $("#record");
+  if (!record) return;
+  const speed = Math.max(0, Number(state.settings.spinSpeed ?? 6));
+  record.style.setProperty("--record-spin-duration", speed > 0 ? `${60 / speed}s` : "0s");
+  record.style.animationPlayState = speed > 0 && !audio.paused ? "running" : "paused";
 }
 
 function setRangeOutputs() {
@@ -552,6 +561,7 @@ function setRangeOutputs() {
     if (input.id === "titleSize") $("#floatingTitle").style.fontSize = `${Number(input.value) / 1.8}px`;
     if (input.id === "titlePosition") $("#floatingTitle").style.top = `${Number(input.value)}%`;
     if (input.id === "layoutScale") $("#musicScene").style.scale = String(Number(input.value) / 100);
+    if (input.id === "spinSpeed") syncRecordRotation();
     if (input.id === "backgroundDarkness") $("#previewBackdrop").style.filter = `brightness(${1 - Number(input.value) / 140})`;
     if (input.id.startsWith("wave")) applyWaveSettings();
   }));
@@ -605,8 +615,8 @@ function bindPanelEvents() {
   onChange("waveType", el => { state.settings.waveType = el.value; applyWaveSettings(); });
   onChange("waveGlow", el => { state.settings.waveGlow = el.checked; applyWaveSettings(); });
   onChange("backgroundDarkness", el => { state.settings.darkness = Number(el.value); });
-  onChange("titleColor", el => { $("#previewTitle").style.color = el.value; });
-  onChange("subtitleColor", el => { $("#subtitlePreview").style.color = el.value; });
+  onChange("titleColor", el => { state.settings.titleColor = el.value; $("#previewTitle").style.color = el.value; });
+  onChange("subtitleColor", el => { state.settings.subtitleColor = el.value; $("#subtitlePreview").style.color = el.value; });
 
   $("#replaceTrack", panels)?.addEventListener("click", () => {
     if (state.selected < 0) return notify("Hãy chọn bài hát cần thay trước.");
@@ -776,78 +786,507 @@ async function openProject(file) {
   }
 }
 
+function loadCanvasArtwork() {
+  return Promise.all(Object.entries(state.images).map(([key, source]) => new Promise((resolve, reject) => {
+    if (!source) return resolve([key, null]);
+    const image = new Image();
+    const objectUrl = source instanceof Blob ? URL.createObjectURL(source) : null;
+    image.onload = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      resolve([key, image]);
+    };
+    image.onerror = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      reject(new Error(`Không thể nạp ảnh ${key} để xuất video.`));
+    };
+    image.src = objectUrl || source;
+  }))).then(entries => Object.fromEntries(entries));
+}
+
+function drawImageCover(context, image, x, y, width, height) {
+  if (!image?.naturalWidth || !image?.naturalHeight) return;
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const sourceWidth = width / scale;
+  const sourceHeight = height / scale;
+  context.drawImage(
+    image,
+    (image.naturalWidth - sourceWidth) / 2,
+    (image.naturalHeight - sourceHeight) / 2,
+    sourceWidth,
+    sourceHeight,
+    x,
+    y,
+    width,
+    height
+  );
+}
+
+function drawCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && context.measureText(candidate).width > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) {
+    lines.length = maxLines;
+    let last = lines[maxLines - 1];
+    while (last && context.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
+    lines[maxLines - 1] = `${last.trimEnd()}…`;
+  }
+  lines.forEach((item, index) => context.fillText(item, x, y + index * lineHeight, maxWidth));
+  return lines.length;
+}
+
+function drawVinylArtwork(context, artwork, time) {
+  const centerX = 476 + Number(state.settings.recordX || 0) * 4;
+  const centerY = 360 + Number(state.settings.recordY || 0) * 4;
+  const radius = 218 * Math.max(.5, Math.min(1.5, Number(state.settings.recordScale || 100) / 100));
+  const overlap = Number(state.settings.recordOverlap ?? 22);
+  const cardX = centerX + radius * (1 - overlap / 100) - 22;
+  const cardY = 140;
+  const cardSize = 440;
+  const track = currentTrack();
+  const spin = time * Number(state.settings.spinSpeed ?? 6) * Math.PI / 30;
+
+  context.save();
+  context.shadowColor = "#000b";
+  context.shadowBlur = 55;
+  context.shadowOffsetY = 24;
+  const disc = context.createRadialGradient(centerX - 70, centerY - 92, 12, centerX, centerY, radius);
+  disc.addColorStop(0, "#46423d");
+  disc.addColorStop(.42, "#17191b");
+  disc.addColorStop(.82, "#090a0c");
+  disc.addColorStop(1, "#262626");
+  context.fillStyle = disc;
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+
+  context.save();
+  context.translate(centerX, centerY);
+  context.rotate(spin);
+  for (let ring = 0; ring < 13; ring++) {
+    context.beginPath();
+    context.arc(0, 0, radius * (.46 + ring * .038), 0, Math.PI * 2);
+    context.strokeStyle = ring % 3 === 0 ? "#e2d2af20" : "#ffffff0d";
+    context.lineWidth = ring % 3 === 0 ? 1.5 : 1;
+    context.stroke();
+  }
+  const reflection = context.createLinearGradient(-radius, -radius, radius, radius);
+  reflection.addColorStop(0, "#ffffff26");
+  reflection.addColorStop(.24, "#ffffff00");
+  reflection.addColorStop(.58, "#d9c29b0d");
+  reflection.addColorStop(1, "#ffffff00");
+  context.fillStyle = reflection;
+  context.beginPath();
+  context.arc(0, 0, radius * .97, 0, Math.PI * 2);
+  context.fill();
+  context.beginPath();
+  context.arc(0, 0, radius * .9, -.045, .045);
+  context.strokeStyle = "#e2c07d80";
+  context.lineWidth = 2;
+  context.stroke();
+  context.beginPath();
+  context.arc(radius * .87, 0, 2.5, 0, Math.PI * 2);
+  context.fillStyle = "#f2d9a6a8";
+  context.fill();
+  context.restore();
+
+  context.save();
+  context.shadowColor = "#0009";
+  context.shadowBlur = 24;
+  context.fillStyle = "#0c0d0e";
+  context.beginPath();
+  context.arc(centerX, centerY, 96, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+  context.save();
+  context.beginPath();
+  context.arc(centerX, centerY, 86, 0, Math.PI * 2);
+  context.clip();
+  if (artwork.disc) drawImageCover(context, artwork.disc, centerX - 86, centerY - 86, 172, 172);
+  else {
+    const label = context.createRadialGradient(centerX - 22, centerY - 26, 1, centerX, centerY, 88);
+    label.addColorStop(0, "#f7daa0");
+    label.addColorStop(1, "#c58f3f");
+    context.fillStyle = label;
+    context.fillRect(centerX - 88, centerY - 88, 176, 176);
+    context.fillStyle = "#322419";
+    context.textAlign = "center";
+    context.font = "600 17px Georgia";
+    context.fillText(state.channel || "AurioMusic", centerX, centerY - 2, 145);
+    context.font = "700 7px sans-serif";
+    context.fillText("RECORD LABEL", centerX, centerY + 17);
+  }
+  context.restore();
+  context.beginPath();
+  context.arc(centerX, centerY, 5, 0, Math.PI * 2);
+  context.fillStyle = "#101113";
+  context.fill();
+
+  context.save();
+  context.shadowColor = "#000b";
+  context.shadowBlur = 42;
+  context.shadowOffsetY = 18;
+  context.beginPath();
+  context.roundRect(cardX, cardY, cardSize, cardSize, 8);
+  context.fillStyle = "#101318";
+  context.fill();
+  context.restore();
+  context.save();
+  context.beginPath();
+  context.roundRect(cardX, cardY, cardSize, cardSize, 8);
+  context.clip();
+  if (artwork.square) drawImageCover(context, artwork.square, cardX, cardY, cardSize, cardSize);
+  else {
+    const cover = context.createLinearGradient(cardX, cardY, cardX + cardSize, cardY + cardSize);
+    cover.addColorStop(0, "#29251f");
+    cover.addColorStop(.48, "#15171b");
+    cover.addColorStop(1, "#33291e");
+    context.fillStyle = cover;
+    context.fillRect(cardX, cardY, cardSize, cardSize);
+    context.strokeStyle = "#cda86623";
+    for (let index = 0; index < 7; index++) {
+      context.beginPath();
+      context.arc(cardX + 390, cardY + 76, 34 + index * 30, 0, Math.PI * 2);
+      context.stroke();
+    }
+  }
+  const shade = context.createLinearGradient(cardX, cardY, cardX, cardY + cardSize);
+  const coverDarkness = Math.max(0, Math.min(100, Number(state.settings.coverDarkness ?? 85))) / 100;
+  shade.addColorStop(0, `rgba(9,11,16,${.38 + coverDarkness * .35})`);
+  shade.addColorStop(.2, `rgba(9,11,16,${.12 + coverDarkness * .2})`);
+  shade.addColorStop(.55, `rgba(9,11,16,${.12 + coverDarkness * .2})`);
+  shade.addColorStop(1, `rgba(9,11,16,${.48 + coverDarkness * .45})`);
+  context.fillStyle = shade;
+  context.fillRect(cardX, cardY, cardSize, cardSize);
+  context.strokeStyle = "#ffffff28";
+  context.lineWidth = 1;
+  context.strokeRect(cardX + .5, cardY + .5, cardSize - 1, cardSize - 1);
+  context.textAlign = "left";
+  context.fillStyle = "#e8cc95";
+  context.font = "600 10px Arial";
+  context.letterSpacing = "1.4px";
+  context.fillText("AURIO MUSIC", cardX + 34, cardY + 40);
+  context.textAlign = "right";
+  context.fillStyle = "#ffffffb8";
+  context.font = "600 9px Arial";
+  context.fillText("SIDE A · 01", cardX + cardSize - 34, cardY + 40);
+  context.strokeStyle = "#ffffff42";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(cardX + 34, cardY + 57);
+  context.lineTo(cardX + cardSize - 34, cardY + 57);
+  context.stroke();
+  context.letterSpacing = "0px";
+  context.textAlign = "center";
+  if (state.showTitle) {
+    const title = track?.title || state.settings.title || "Tên bài hát";
+    const titleSize = Math.min(42, Math.max(25, Number(state.settings.titleSize || 64) * .58));
+    context.fillStyle = state.settings.titleColor || "#f5f1e9";
+    context.shadowColor = "#000b";
+    context.shadowBlur = 12;
+    context.font = `600 ${titleSize}px ${state.settings.titleFont === "sans" ? "Arial" : "Georgia"}`;
+    const lineCount = drawCanvasText(context, title, cardX + cardSize / 2, cardY + 203, cardSize - 60, titleSize * 1.13, 2);
+    context.shadowBlur = 0;
+    const titleBottom = cardY + 203 + Math.max(0, lineCount - 1) * titleSize * 1.13;
+    context.fillStyle = "#e7c887";
+    context.beginPath();
+    context.moveTo(cardX + cardSize / 2 - 12, titleBottom + 17);
+    context.lineTo(cardX + cardSize / 2 + 12, titleBottom + 17);
+    context.strokeStyle = "#e7c887c0";
+    context.lineWidth = 1.2;
+    context.stroke();
+    context.fillStyle = "#fff4e6";
+    context.font = "500 17px Arial";
+    context.fillText(track?.artist || state.settings.artist || "", cardX + cardSize / 2, titleBottom + 47, cardSize - 62);
+  }
+  context.fillStyle = "#e8cc95";
+  context.font = "600 9px Arial";
+  context.letterSpacing = "1.3px";
+  context.fillText((track?.album || state.settings.album || "MUSIC").toUpperCase(), cardX + cardSize / 2, cardY + cardSize - 37, cardSize - 68);
+  context.letterSpacing = "0px";
+  context.restore();
+}
+
+function drawBackgroundArtwork(context, artwork) {
+  if (artwork.background) drawImageCover(context, artwork.background, 0, 0, 1280, 720);
+  else {
+    const background = context.createLinearGradient(0, 0, 1280, 720);
+    background.addColorStop(0, "#202a32");
+    background.addColorStop(.48, "#12171c");
+    background.addColorStop(1, "#2d241a");
+    context.fillStyle = background;
+    context.fillRect(0, 0, 1280, 720);
+  }
+  const darkness = Math.max(0, Math.min(100, Number(state.settings.darkness ?? 30))) / 100;
+  const shade = context.createLinearGradient(0, 0, 0, 720);
+  shade.addColorStop(0, `rgba(5,7,10,${.42 + darkness * .25})`);
+  shade.addColorStop(.52, `rgba(5,7,10,${.35 + darkness * .28})`);
+  shade.addColorStop(1, `rgba(5,7,10,${.7 + darkness * .27})`);
+  context.fillStyle = shade;
+  context.fillRect(0, 0, 1280, 720);
+  const titleY = Math.min(620, Math.max(100, Number(state.settings.titlePosition ?? 42) * 7.2));
+  const track = currentTrack();
+  context.textAlign = "center";
+  if (state.showTitle) {
+    context.fillStyle = state.settings.titleColor || "#ffffff";
+    context.shadowColor = "#000c";
+    context.shadowBlur = 24;
+    const size = Math.min(88, Math.max(36, Number(state.settings.titleSize || 64)));
+    context.font = `600 ${size}px ${state.settings.titleFont === "sans" ? "Arial" : "Georgia"}`;
+    drawCanvasText(context, track?.title || state.settings.title || "Tên bài hát", 640, titleY, 1040, size * 1.12, 2);
+    context.shadowBlur = 0;
+  }
+  context.fillStyle = "#e4c27d";
+  context.font = "500 25px Arial";
+  context.fillText(track?.artist || state.settings.artist || "", 640, titleY + 52, 980);
+  if (state.showNote && state.settings.noteText) {
+    const noteY = Math.min(650, Math.max(80, Number(state.settings.notePosition ?? 57) * 7.2));
+    context.fillStyle = state.settings.noteColor || "#edb969";
+    context.font = `500 ${Math.min(58, Math.max(20, Number(state.settings.noteSize || 30)))}px Arial`;
+    context.fillText(state.settings.noteText, 640, noteY, 1000);
+  }
+}
+
+function drawExportSubtitle(context) {
+  if (!state.showSubtitle || !state.subtitleLines.length) return;
+  const activeMark = [...state.subtitleMarks].reverse().find(mark => mark.time <= audio.currentTime);
+  const text = activeMark?.text || state.subtitleLines[Math.min(
+    state.subtitleLines.length - 1,
+    Math.floor(audio.currentTime / (audio.duration / state.subtitleLines.length || 1))
+  )];
+  if (!text) return;
+  const y = Math.min(680, Math.max(100, Number(state.settings.subtitlePosition ?? 76) * 7.2));
+  const fontSize = Math.min(52, Math.max(22, Number(state.settings.subtitleSize ?? 44) * .65));
+  context.save();
+  context.font = `700 ${fontSize}px Arial`;
+  const width = Math.min(1120, Math.max(520, context.measureText(text).width + 72));
+  context.fillStyle = "#080a0dc9";
+  context.beginPath();
+  context.roundRect(640 - width / 2, y - fontSize - 17, width, fontSize + 38, 12);
+  context.fill();
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillStyle = state.settings.subtitleColor || "#ffffff";
+  context.shadowColor = "#000";
+  context.shadowBlur = 7;
+  context.fillText(text, 640, y, width - 52);
+  context.restore();
+}
+
 async function exportVideo() {
   if (!currentTrack()?.url) return notify("Thêm và chọn một file nhạc trước khi xuất video.");
   if (state.tracks.some(track => !track.url)) return notify("Hãy thêm lại tất cả file nhạc của dự án trước khi xuất.");
   if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return notify("Trình duyệt này chưa hỗ trợ xuất WebM. Hãy thử Chrome hoặc Edge mới.");
   const exportButton = $("#exportVideo");
   exportButton.disabled = true;
-  exportButton.textContent = "Đang chuẩn bị…";
-  const canvas = document.createElement("canvas");
-  canvas.width = 1280; canvas.height = 720;
-  const ctx = canvas.getContext("2d");
-  const stream = canvas.captureStream(30);
+  let stream;
+  let recorder;
+  let chunks = [];
+  let finished = false;
+  let failed = false;
+  let artwork = {};
+  let exportIndex = state.selected;
+  let playStartTimeout = 0;
+  let frameTimer = 0;
+  const originalOnEnded = audio.onended;
+  const updateExportProgress = () => {
+    if (!exportInProgress || audio.duration <= 0) return;
+    exportButton.textContent = `Đang xuất ${exportIndex + 1}/${state.tracks.length} · ${formatTime(audio.currentTime)}/${formatTime(audio.duration)}…`;
+  };
+  const handleExportAudioError = () => {
+    failed = true;
+    cleanup();
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    notify("File nhạc bị lỗi khi đang xuất. Hãy chọn lại file rồi thử lại.");
+  };
+  const resetExportButton = () => {
+    exportButton.disabled = false;
+    exportButton.innerHTML = 'Xuất video <span>↗</span>';
+  };
+  const cleanup = () => {
+    if (finished) return;
+    finished = true;
+    audio.pause();
+    audio.onended = originalOnEnded;
+    audio.removeEventListener("timeupdate", updateExportProgress);
+    audio.removeEventListener("error", handleExportAudioError);
+    clearTimeout(playStartTimeout);
+    clearInterval(frameTimer);
+    exportInProgress = false;
+    stream?.getTracks().forEach(track => track.stop());
+    resetExportButton();
+  };
   let audioContext;
   try {
+    exportButton.textContent = "Đang chuẩn bị khung hình…";
+    const canvas = document.createElement("canvas");
+    canvas.width = 1280; canvas.height = 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Không thể tạo khung hình video trên trình duyệt này.");
+    stream = canvas.captureStream(30);
+    if (!stream) throw new Error("Không thể khởi tạo luồng video để xuất.");
+    exportButton.textContent = "Đang nạp ảnh bìa…";
+    artwork = await loadCanvasArtwork();
+    exportButton.textContent = "Đang khởi tạo âm thanh…";
     audioContext = ensureAudioAnalyser();
-    const destination = audioContext.createMediaStreamDestination();
-    audioAnalyser.connect(destination);
-    destination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
-    audio.currentTime = 0;
     await audioContext.resume();
-    await audio.play();
-    const chunks = [];
+    const captureAudio = audio.captureStream || audio.mozCaptureStream;
+    if (!captureAudio) throw new Error("Trình duyệt chưa hỗ trợ thu âm thanh khi xuất. Hãy dùng Chrome hoặc Edge mới.");
+    const audioTracks = captureAudio.call(audio).getAudioTracks();
+    if (!audioTracks.length) throw new Error("Không lấy được luồng âm thanh để xuất video.");
+    audioTracks.forEach(track => stream.addTrack(track));
     const mimeType = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(type => MediaRecorder.isTypeSupported(type));
     if (!mimeType) throw new Error("Trình duyệt không hỗ trợ định dạng WebM.");
-    const recorder = new MediaRecorder(stream, { mimeType });
+    exportButton.textContent = "Đang nạp âm thanh…";
+    if (audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error("Không nạp được âm thanh. Kiểm tra file nhạc rồi thử xuất lại."));
+        }, 15000);
+        const clear = () => {
+          clearTimeout(timeout);
+          audio.removeEventListener("canplay", ready);
+          audio.removeEventListener("error", failedToLoad);
+        };
+        const ready = () => { clear(); resolve(); };
+        const failedToLoad = () => {
+          clear();
+          reject(new Error("Không đọc được file nhạc. Hãy kiểm tra định dạng hoặc chọn lại file."));
+        };
+        audio.addEventListener("canplay", ready, { once: true });
+        audio.addEventListener("error", failedToLoad, { once: true });
+        if (audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) ready();
+      });
+    }
+    recorder = new MediaRecorder(stream, { mimeType });
     const drawFrame = () => {
-      const gradient = ctx.createRadialGradient(650, 350, 50, 640, 350, 800);
-      gradient.addColorStop(0, "#2b241a"); gradient.addColorStop(1, "#090b10");
-      ctx.fillStyle = gradient; ctx.fillRect(0, 0, 1280, 720);
-      ctx.fillStyle = "#d8b76e"; ctx.font = "18px Georgia"; ctx.fillText(state.channel, 70, 70);
-      ctx.beginPath(); ctx.arc(490, 345, 176, 0, Math.PI * 2); ctx.fillStyle = "#111316"; ctx.fill();
-      ctx.beginPath(); ctx.arc(490, 345, 67, 0, Math.PI * 2); ctx.fillStyle = "#e7b65f"; ctx.fill();
-      ctx.fillStyle = "#17191e"; ctx.fillRect(540, 190, 370, 310);
-      ctx.fillStyle = "#eee"; ctx.textAlign = "center"; ctx.font = "600 42px Georgia"; ctx.fillText(currentTrack()?.title || "", 725, 350, 330);
-      ctx.fillStyle = "#d2b679"; ctx.font = "20px sans-serif"; ctx.fillText(currentTrack()?.artist || state.settings.artist, 725, 402, 320);
-      if (state.subtitleLines.length && state.showSubtitle) {
-        ctx.fillStyle = "#d8d8d8"; ctx.font = "24px sans-serif"; ctx.fillText(state.subtitleLines[Math.min(state.subtitleLines.length - 1, Math.floor(audio.currentTime / (audio.duration / state.subtitleLines.length || 1)))] || "", 640, 625, 1080);
+      if (state.settings.layout === "background") {
+        drawBackgroundArtwork(ctx, artwork);
+      } else {
+        if (artwork.background) {
+          drawImageCover(ctx, artwork.background, 0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#080a0dcc";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+          const gradient = ctx.createRadialGradient(640, 350, 30, 640, 360, 760);
+          gradient.addColorStop(0, "#24211d");
+          gradient.addColorStop(.56, "#11141a");
+          gradient.addColorStop(1, "#07080b");
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        const scale = Math.max(.5, Math.min(1.5, Number(state.settings.layoutScale || 100) / 100));
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(scale, scale);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+        drawVinylArtwork(ctx, artwork, audio.currentTime);
+        ctx.restore();
       }
+      const vignette = ctx.createRadialGradient(640, 360, 300, 640, 360, 790);
+      vignette.addColorStop(0, "#00000000");
+      vignette.addColorStop(1, "#00000082");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (state.showChannel) {
+        if (artwork.logo) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(66, 48, 38, 38, 10);
+          ctx.clip();
+          drawImageCover(ctx, artwork.logo, 66, 48, 38, 38);
+          ctx.restore();
+        }
+        ctx.fillStyle = "#e4c27d";
+        ctx.textAlign = "left";
+        ctx.font = "600 16px Georgia";
+        ctx.shadowColor = "#000";
+        ctx.shadowBlur = 8;
+        ctx.fillText(state.channel || "AurioMusic", artwork.logo ? 116 : 68, 73, 320);
+        ctx.shadowBlur = 0;
+      }
+      if (state.showNote && state.settings.layout === "vinyl" && state.settings.noteText) {
+        ctx.fillStyle = state.settings.noteColor || "#edb969";
+        ctx.textAlign = "center";
+        ctx.font = `500 ${Math.min(36, Math.max(18, Number(state.settings.noteSize || 30) * .7))}px Arial`;
+        ctx.fillText(state.settings.noteText, 640, 600, 900);
+      }
+      drawExportSubtitle(ctx);
       drawWave(ctx, canvas.width, canvas.height);
-      if (recorder.state !== "inactive") requestAnimationFrame(drawFrame);
     };
     recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
     recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: mimeType });
-      const url = URL.createObjectURL(blob); const link = document.createElement("a");
-      link.href = url; link.download = `${(currentTrack()?.title || "auriovideo").replace(/[\\/:*?"<>|]/g, "-")}.webm`; link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      audio.pause(); audio.onended = null; exportInProgress = false;
-      stream.getTracks().forEach(track => track.stop()); audioAnalyser.disconnect(destination);
-      exportButton.disabled = false; exportButton.innerHTML = 'Xuất video <span>↗</span>';
-      notify("Video playlist WebM đã xuất xong.");
+      if (failed) return cleanup();
+      try {
+        const blob = new Blob(chunks, { type: mimeType });
+        if (!blob.size) throw new Error("Video xuất ra bị rỗng. Hãy thử lại hoặc dùng Chrome/Edge.");
+        const url = URL.createObjectURL(blob); const link = document.createElement("a");
+        link.href = url; link.download = `${(currentTrack()?.title || "auriovideo").replace(/[\\/:*?"<>|]/g, "-")}.webm`; link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        cleanup();
+        notify("Video playlist WebM đã xuất xong.");
+      } catch (error) {
+        cleanup();
+        notify(error.message || "Không thể lưu video đã xuất.");
+      }
+    };
+    recorder.onerror = event => {
+      failed = true;
+      cleanup();
+      notify(event.error?.message || "Lỗi khi ghi video. Hãy thử lại bằng Chrome hoặc Edge.");
     };
     exportInProgress = true;
-    let exportIndex = state.selected;
-    recorder.start(1000); drawFrame();
+    audio.currentTime = 0;
     audio.onended = () => {
       if (exportIndex + 1 < state.tracks.length) {
         exportIndex += 1;
         exportButton.textContent = `Đang xuất ${exportIndex + 1}/${state.tracks.length}…`;
         selectTrack(exportIndex);
         audio.currentTime = 0;
-        audio.play().catch(() => recorder.stop());
+        audio.play().catch(error => {
+          failed = true;
+          cleanup();
+          if (recorder.state !== "inactive") recorder.stop();
+          notify(error.message || "Không thể phát track tiếp theo khi xuất video.");
+        });
       } else if (recorder.state !== "inactive") {
-        recorder.stop();
+        recorder.requestData();
+        setTimeout(() => {
+          if (recorder.state !== "inactive") recorder.stop();
+        }, 0);
       }
     };
+    recorder.start(1000);
+    drawFrame();
+    frameTimer = setInterval(drawFrame, 1000 / 30);
+    exportButton.textContent = `Đang xuất 1/${state.tracks.length}…`;
+    audio.addEventListener("timeupdate", updateExportProgress);
+    audio.addEventListener("error", handleExportAudioError);
     notify(`Đang xuất ${state.tracks.length} bài · giữ trang này mở đến khi hoàn tất.`);
+    const playbackStarted = audio.play();
+    await Promise.race([
+      playbackStarted,
+      new Promise((_, reject) => {
+        playStartTimeout = setTimeout(() => reject(new Error("Không bắt đầu phát được nhạc sau 15 giây. Kiểm tra file hoặc thử lại bằng Chrome/Edge.")), 15000);
+      })
+    ]);
+    clearTimeout(playStartTimeout);
   } catch (error) {
-    audio.pause();
-    exportInProgress = false;
-    stream.getTracks().forEach(track => track.stop());
-    if (audioContext && audioAnalyser) audioAnalyser.disconnect();
-    exportButton.disabled = false; exportButton.innerHTML = 'Xuất video <span>↗</span>';
+    failed = true;
+    cleanup();
+    if (recorder && recorder.state !== "inactive") recorder.stop();
     notify(error.message || "Không thể xuất video.");
   }
 }
@@ -908,11 +1347,13 @@ function init() {
   });
   audio.addEventListener("play", () => {
     document.body.classList.add("is-playing");
+    syncRecordRotation();
     $("#playIcon").textContent = "Ⅱ";
     animateWave();
   });
   audio.addEventListener("pause", () => {
     document.body.classList.remove("is-playing");
+    syncRecordRotation();
     $("#playIcon").textContent = "▶";
     cancelAnimationFrame(waveAnimationFrame);
     applyWaveSettings();

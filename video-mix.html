@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0e12">
+  <title>Gộp Voice + Video · auriovideo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./video-mix.css">
+</head>
+<body>
+  <header class="mix-topbar">
+    <a class="brand" href="./index.html" aria-label="Quay lại auriovideo">
+      <span class="brand-mark">A</span>
+      <span class="brand-copy"><strong>auriovideo</strong><small>VOICE + VIDEO MIXER</small></span>
+    </a>
+    <nav class="top-actions" aria-label="Các studio">
+      <a class="top-link" href="./index.html">Playlist Studio</a>
+      <a class="top-link" href="./karaoke.html">Karaoke Studio</a>
+      <a class="top-link" href="./music.html">Music Studio</a>
+      <button class="top-button top-primary" id="exportVideo" disabled>Xuất video ↗</button>
+    </nav>
+    <button class="mobile-menu" id="mobileMenu" aria-label="Mở menu">☰</button>
+  </header>
+
+  <main class="mix-layout">
+    <section class="editor">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">VIDEO EDITOR</span>
+          <h1>Ghép voice vào <em>câu chuyện của bạn.</em></h1>
+          <p>Thêm nhiều clip, sắp xếp thứ tự rồi ghép cùng một track voice.</p>
+        </div>
+        <span class="quality-badge"><i></i> 16:9 · WebM</span>
+      </div>
+
+      <section class="preview-card" aria-label="Xem trước video">
+        <div class="preview-stage" id="previewStage">
+          <div class="stage-glow"></div>
+          <video id="previewVideo" playsinline preload="metadata"></video>
+          <div class="stage-empty" id="stageEmpty">
+            <span class="empty-icon">▶</span>
+            <strong>Thêm video để bắt đầu dựng</strong>
+            <small>Kéo các clip để sắp xếp thứ tự phát</small>
+          </div>
+          <div class="clip-badge" id="clipBadge" hidden><span id="clipNumber">01</span><b id="clipName">Video</b></div>
+          <div class="stage-shade"></div>
+          <div class="stage-footer"><span>VOICE + VIDEO</span><span id="stageClock">00:00 / 00:00</span></div>
+        </div>
+        <div class="transport">
+          <button class="transport-button transport-play" id="playPause" aria-label="Phát hoặc tạm dừng" disabled>▶</button>
+          <span class="transport-time"><b id="currentTime">00:00</b><span>/</span><b id="totalTime">00:00</b></span>
+          <input id="seekBar" type="range" min="0" max="1000" value="0" aria-label="Tua video" disabled>
+          <button class="transport-button" id="restart" aria-label="Về đầu" disabled>↺</button>
+        </div>
+      </section>
+
+      <section class="timeline-card">
+        <div class="section-heading">
+          <div><span class="eyebrow">VIDEO TIMELINE</span><h2>Thứ tự phát clip</h2></div>
+          <button class="small-button" id="addVideos">＋ Thêm video</button>
+        </div>
+        <div class="video-list" id="videoList"></div>
+        <div class="empty-list" id="emptyList">Chưa có clip nào. Thêm MP4 hoặc WebM để tạo timeline.</div>
+        <div class="timeline-summary"><span>Kéo ≡ hoặc dùng nút ↑ ↓ để đổi thứ tự</span><b id="videoSummary">0 clip · 00:00</b></div>
+      </section>
+    </section>
+
+    <aside class="tools">
+      <section class="tool-card">
+        <div class="card-title"><span class="card-icon">▣</span><div><h2>Track voice</h2><p>Một bản thu chạy xuyên suốt video</p></div></div>
+        <button class="upload-box" id="addVoice">
+          <span class="upload-icon">↥</span><strong id="voiceName">Chọn file voice</strong>
+          <small>MP3, WAV, M4A hoặc WebM · giọng sẽ bắt đầu từ đầu video</small>
+        </button>
+        <div class="voice-loaded" id="voiceLoaded" hidden>
+          <span class="voice-wave">♫</span><div><strong id="voiceLoadedName"></strong><small id="voiceDuration">00:00</small></div>
+          <button class="remove-voice" id="removeVoice" aria-label="Bỏ voice">×</button>
+        </div>
+        <label class="range-label" for="voiceVolume"><span>Âm lượng voice</span><output id="voiceVolumeValue">100%</output></label>
+        <input class="range-input" id="voiceVolume" type="range" min="0" max="100" value="100">
+        <p class="helper-note">Tiếng gốc của video được tắt để voice rõ ràng. Dự án xử lý ngay trên máy của bạn.</p>
+        <p class="length-hint" id="lengthHint">Voice bắt đầu từ đầu timeline; hãy căn độ dài voice với tổng thời lượng video.</p>
+      </section>
+
+      <section class="tool-card">
+        <div class="card-title"><span class="card-icon gold">↗</span><div><h2>Chuẩn bị xuất</h2><p>Kiểm tra nội dung trước khi render</p></div></div>
+        <label class="field-label" for="projectTitle">Tên file video</label>
+        <input class="text-input" id="projectTitle" value="video-voice-mix" maxlength="80">
+        <div class="export-info">
+          <div><span>VIDEO</span><b id="infoVideoCount">0 clip</b></div>
+          <div><span>VOICE</span><b id="infoVoice">Chưa thêm</b></div>
+          <div><span>THỜI LƯỢNG</span><b id="infoDuration">00:00</b></div>
+        </div>
+        <button class="wide-button" id="exportVideoSide" disabled>Xuất video WebM ↗</button>
+        <div class="export-progress" id="exportProgress" hidden>
+          <div><span id="exportStatus">Đang chuẩn bị…</span><b id="exportPercent">0%</b></div>
+          <div class="progress-track"><i id="progressFill"></i></div>
+        </div>
+        <p class="format-note">Xuất 1280 × 720, 30 FPS. Thời gian render xấp xỉ độ dài của video.</p>
+      </section>
+
+      <div class="privacy-callout"><span>◈</span><p>Video và voice không được tải lên server. Hãy giữ trang này mở cho đến khi xuất xong.</p></div>
+    </aside>
+  </main>
+
+  <input type="file" id="videoFiles" accept="video/mp4,video/webm" multiple hidden>
+  <input type="file" id="voiceFile" accept="audio/*,video/webm" hidden>
+  <audio id="voicePreview" preload="metadata"></audio>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./video-mix.js"></script>
+</body>
+</html>
